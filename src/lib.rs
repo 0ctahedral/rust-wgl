@@ -1,19 +1,17 @@
 #![macro_use]
 mod webmacros;
 mod webutils;
+mod engine;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use web_sys::*;
-use web_sys::WebGlRenderingContext as GL;
+use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
-// #[wasm_bindgen]
-// extern {
-//     // import the alert() js function
-//     pub fn alert(s: &str);
-// }
+
+const FPS_THROTTLE: f64 = 1000.0 / 30.0;
 
 // helper function for requesting animation frames
 pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -25,68 +23,43 @@ pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-
   setup_page(&webutils::document(), &webutils::body())?;
-
   let canvas = webutils::document().get_element_by_id("my-canvas")
     .expect("Canvas not found");
 
-  let c = Client::new(canvas);
+  // give our client the gl rendering context
+  let gl = get_webgl_ctx(canvas).unwrap();
+  let c = engine::Engine::new(gl);
 
   let f = Rc::new(RefCell::new(None));
+  // setup g as the render loop
   let g = f.clone();
-
+  let mut lastupdate = Date::now();
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-
-    c.render();
-    
+    let d = Date::now() - lastupdate;
+    if d > FPS_THROTTLE {
+      lastupdate = Date::now();
+      c.render();
+      webutils::log("rendered")
+    }
     request_animation_frame(f.borrow().as_ref().unwrap());
   }) as Box<dyn FnMut()>));
 
   request_animation_frame(g.borrow().as_ref().unwrap());
+
+  webutils::log("loggin");
   Ok(())
 }
 
-// create public functions that we can then hook up
-// to the events
+pub fn get_webgl_ctx(canvas: Element)
+                     -> Result<WebGlRenderingContext, JsValue> {
 
-#[wasm_bindgen]
-pub struct Client {
-  gl: WebGlRenderingContext,
-}
-
-#[wasm_bindgen]
-impl Client {
-  #[wasm_bindgen(constructor)]
-  pub fn new(canvas: Element) -> Self {
-    let gl = init_webgl_ctx(canvas).unwrap();
-    Self {
-      gl: gl,
-    }
-  }
-
-  pub fn update(&mut self, _time: f32, _height: f32, _width: f32)
-                -> Result<(), JsValue> {
-    Ok(())
-  }
-
-  pub fn render(&self) {
-    self.gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT)
-  }
-}
-
-pub fn init_webgl_ctx(canvas: Element) -> Result<WebGlRenderingContext, JsValue> {
   let canvas: web_sys::HtmlCanvasElement = canvas
     .dyn_into::<web_sys::HtmlCanvasElement>()?;
-  let gl: WebGlRenderingContext = canvas.get_context("webgl")?
-    .unwrap().dyn_into()?;
 
-  gl.enable(GL::BLEND);
-  gl.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
-  gl.clear_color(0.0, 0.0, 0.0, 1.0);
-  gl.clear_depth(1.0);
-
-  Ok(gl)
+  let ctx = canvas.get_context("webgl")?
+    .unwrap().dyn_into::<WebGlRenderingContext>()?;
+  Ok(ctx)
 }
 
 // Add a title and a canvas that is green
@@ -100,7 +73,6 @@ fn setup_page(doc: &Document, body: &HtmlElement)
                         ("height", "500"),
                         ("style", "border:1px solid")
   );
-
   Ok(())
 }
 
