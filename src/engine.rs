@@ -7,6 +7,8 @@ use web_sys::WebGlRenderingContext as GL;
 #[wasm_bindgen]
 pub struct Engine {
   gl: WebGlRenderingContext,
+  // miliseconds elapsed before the next frame can be drawn
+  frame_thresh: f64,
 }
 
 #[wasm_bindgen]
@@ -21,6 +23,8 @@ impl Engine {
 
     Self {
       gl: gl,
+      // default to 30 fps
+      frame_thresh: 1000.0 / 30.0,
     }
   }
 
@@ -34,5 +38,13 @@ impl Engine {
 
   pub fn render(&self) {
     self.gl.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT)
+  }
+
+  pub fn set_frame_rate(&mut self, fps: f64) {
+    self.frame_thresh = 1000.0 / fps;
+  }
+
+  pub fn get_frame_thresh(&self) -> f64{
+    self.frame_thresh
   }
 }

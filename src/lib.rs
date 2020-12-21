@@ -11,8 +11,6 @@ use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-const FPS_THROTTLE: f64 = 1000.0 / 30.0;
-
 // helper function for requesting animation frames
 pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
   webutils::window()
@@ -20,7 +18,6 @@ pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
     .expect("should register `requestAnimationFrame` OK");
 }
 
-// Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
   setup_page(&webutils::document(), &webutils::body())?;
@@ -29,7 +26,10 @@ pub fn main() -> Result<(), JsValue> {
 
   // give our client the gl rendering context
   let gl = get_webgl_ctx(canvas).unwrap();
-  let c = engine::Engine::new(gl);
+  let mut c = engine::Engine::new(gl);
+
+  // set the frame rate to 60 cuz why not
+  c.set_frame_rate(6 as f64);
 
   let f = Rc::new(RefCell::new(None));
   // setup g as the render loop
@@ -37,10 +37,9 @@ pub fn main() -> Result<(), JsValue> {
   let mut lastupdate = Date::now();
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     let d = Date::now() - lastupdate;
-    if d > FPS_THROTTLE {
+    if d > c.get_frame_thresh() {
       lastupdate = Date::now();
       c.render();
-      webutils::log("rendered")
     }
     request_animation_frame(f.borrow().as_ref().unwrap());
   }) as Box<dyn FnMut()>));
