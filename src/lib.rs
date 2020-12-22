@@ -1,7 +1,4 @@
 #![macro_use]
-mod webmacros;
-mod webutils;
-mod engine;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -10,6 +7,11 @@ use web_sys::*;
 use js_sys::Date;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+mod webmacros;
+mod webutils;
+mod engine;
+mod render;
 
 // helper function for requesting animation frames
 pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -39,7 +41,7 @@ pub fn main() -> Result<(), JsValue> {
     let d = Date::now() - lastupdate;
     if d > c.get_frame_thresh() {
       lastupdate = Date::now();
-      c.render();
+      c.pipeline.render();
     }
     request_animation_frame(f.borrow().as_ref().unwrap());
   }) as Box<dyn FnMut()>));
