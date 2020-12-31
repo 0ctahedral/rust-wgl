@@ -22,6 +22,7 @@ pub trait Renderer {
 pub struct Wgl {
   ctx: GL,
   vert_buff: WebGlBuffer,
+  ind_buff: WebGlBuffer,
   // will be a vector of models to draw
   queue: Vec<Model>,
 }
@@ -35,9 +36,12 @@ impl Wgl {
     // create gl buffer
     let v_buff = ctx.create_buffer()
       .ok_or("failed to create vert buffer").unwrap();
+    let i_buff = ctx.create_buffer()
+      .ok_or("failed to create index buffer").unwrap();
     Self {
       ctx: ctx,
       vert_buff: v_buff,
+      ind_buff: i_buff,
       queue: vec!(),
     }
   }
@@ -55,45 +59,10 @@ impl Renderer for Wgl {
     self.ctx.clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 
     for m in &self.queue {
-      // convert our buffer to a js buffer
-      // TODO: consider moving to utils
-      let mem_buff = wasm_bindgen::memory()
-        .dyn_into::<WebAssembly::Memory>()
-        .unwrap()
-        .buffer();
-      let verts_ptr = m.vertices.as_ptr() as u32 / 4;
-      let vert_arr = js_sys::Float32Array::new(&mem_buff)
-        .subarray(verts_ptr,
-                  verts_ptr + m.vertices.len() as u32);
-
-
-      // bind our buffer for adding vertices
-      self.ctx.bind_buffer(GL::ARRAY_BUFFER, Some(&self.vert_buff));
-      self.ctx.buffer_data_with_array_buffer_view(
-        GL::ARRAY_BUFFER,
-        &vert_arr,
-        GL::STATIC_DRAW);
-
-
       // use our shaders
       self.ctx.use_program(Some(&m.program));
 
-      // bind buffer for drawing
-      self.ctx.bind_buffer(GL::ARRAY_BUFFER, Some(&self.vert_buff));
-      
-      // add position attribute
-      self.ctx.vertex_attrib_pointer_with_i32(
-        0, // which attribute
-        3, // number of values per vertex
-        GL::FLOAT, // type
-        false, // normalize
-        0, // stride
-        0 // offset
-      );
-      self.ctx.enable_vertex_attrib_array(0);
-
       // add uniforms
-
       // bright green color
       self.ctx.uniform4f(
         Some(&m.u_color),
@@ -106,6 +75,7 @@ impl Renderer for Wgl {
       // full opacity
       self.ctx.uniform1f(Some(&m.u_opacity), 1.);
 
+      // setup position
       let tm = translation_matrix(
         2. * left / width - 1.,
         2. * bottom / height - 1.,
@@ -126,14 +96,75 @@ impl Renderer for Wgl {
         &transform,
       );
 
-      self.ctx.draw_arrays(GL::TRIANGLES, 0,
-      (m.vertices.len() / 3) as i32)
+
+      // bind buffer for drawing
+      self.ctx.bind_buffer(GL::ARRAY_BUFFER, Some(&self.vert_buff));
+
+      // add position attribute
+      self.ctx.vertex_attrib_pointer_with_i32(
+        0, // which attribute
+        3, // number of values per vertex
+        GL::FLOAT, // type
+        false, // normalize
+        0, // stride
+        0 // offset
+      );
+      self.ctx.enable_vertex_attrib_array(0);
+
+      // self.ctx.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&self.ind_buff));
+      self.ctx.draw_elements_with_i32(
+        GL::TRIANGLES, m.indices.len() as i32, GL::UNSIGNED_SHORT, 0);
+      // self.ctx.draw_arrays(GL::LINES, 0,
+      // (m.vertices.len() / 3) as i32)
     }
   }
 
   fn add_to_queue(&mut self, item: Model) {
+    // convert our buffer to a js buffer
+    // TODO: consider moving to utils
+    let vert_arr = create_wasm_f32_array(&item.vertices);
+
+    // bind our buffer for adding vertices
+    self.ctx.bind_buffer(GL::ARRAY_BUFFER, Some(&self.vert_buff));
+    self.ctx.buffer_data_with_array_buffer_view(
+      GL::ARRAY_BUFFER,
+      &vert_arr,
+      GL::STATIC_DRAW);
+
+    let ind_arr = create_wasm_u16_array(&item.indices);
+    self.ctx.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&self.ind_buff));
+    self.ctx.buffer_data_with_array_buffer_view(
+      GL::ELEMENT_ARRAY_BUFFER,
+      &ind_arr,
+      GL::STATIC_DRAW);
+
     self.queue.push(item);
   }
+}
+
+pub fn create_wasm_u16_array(v: &Vec<u16>) -> js_sys::Uint16Array {
+    let mem_buff = wasm_bindgen::memory()
+      .dyn_into::<WebAssembly::Memory>()
+      .unwrap()
+      .buffer();
+
+    let ptr = v.as_ptr() as u32 / 2;
+
+    js_sys::Uint16Array::new(&mem_buff)
+      .subarray(ptr,
+                ptr + v.len() as u32)
+}
+
+pub fn create_wasm_f32_array(v: &Vec<f32>) -> js_sys::Float32Array {
+    let mem_buff = wasm_bindgen::memory()
+      .dyn_into::<WebAssembly::Memory>()
+      .unwrap()
+      .buffer();
+
+    let ptr = v.as_ptr() as u32 / 4;
+    js_sys::Float32Array::new(&mem_buff)
+      .subarray(ptr,
+                ptr + v.len() as u32)
 }
 
 pub fn translation_matrix(tx: f32, ty: f32, tz: f32) -> [f32; 16] {
