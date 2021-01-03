@@ -8,7 +8,7 @@ pub struct Engine {
   // miliseconds elapsed before the next frame can be drawn
   frame_thresh: f32,
   // render pipeline
-  pub pipeline: Box<dyn Renderer>,
+  // pub pipeline: Box<dyn Renderer>,
 
   // state
   width: f32,
@@ -19,6 +19,8 @@ pub struct Engine {
   right: f32,
 }
 
+// engine should contain all shaders and objects to draw
+
 // #[wasm_bindgen]
 impl Engine {
   // #[wasm_bindgen(constructor)]
@@ -26,7 +28,7 @@ impl Engine {
     Self {
       // default to 30 fps
       frame_thresh: 1000.0 / 30.0,
-      pipeline: Box::new(Wgl::new(gl)),
+      // pipeline: Box::new(Wgl::new(gl)),
       width: 0.,
       height: 0.,
       bottom: 0.,
@@ -40,27 +42,19 @@ impl Engine {
                 _time: f32,
                 cheight: f32,
                 cwidth: f32
-  //) -> Result<(), JsValue> {
   ) {
-    let min_height_width = cheight.min(cwidth);
-    let display_size = 0.9 * min_height_width;
-    let half_display_size = display_size / 2.;
-    let half_canvas_height = cheight / 2.;
-    let half_canvas_width = cwidth / 2.;
-
     self.width = cwidth;
     self.height = cheight;
-    self.bottom = half_canvas_height - half_display_size;
-    self.top = half_canvas_height + half_display_size;
-    self.left = half_canvas_width - half_display_size;
-    self.right = half_canvas_width + half_display_size;
+    self.bottom = 0.;
+    self.top = cheight;
+    self.left = 0.;
+    self.right = cwidth;
 
-    self.pipeline.render(
-      self.bottom, self.top,
-      self.left, self.right,
-      self.height, self.width
-    )
-    //Ok(())
+    // self.pipeline.render(
+    //   self.bottom, self.top,
+    //   self.left, self.right,
+    //   self.height, self.width
+    // )
   }
 
   pub fn set_frame_rate(&mut self, fps: f32) {

@@ -1,59 +1,60 @@
 use web_sys::*;
-use crate::shaders::funcs::*;
-use crate::shaders::*;
 use crate::webutils::*;
+use crate::shaders::*;
 
 pub struct Model {
-  pub program: WebGlProgram,
+  // TODO: Should these just be slices?
   pub vertices: Vec<f32>,
   pub indices: Vec<u16>,
-  pub u_color: WebGlUniformLocation,
-  pub u_opacity: WebGlUniformLocation,
-  pub u_transform: WebGlUniformLocation,
+  pub color: [f32; 3],
+  pub location: [i32; 3],
+  pub scale: [u32; 3],
+
+  // TODO: Should the program be its own type?
 }
 
 impl Model {
   pub fn new(
     ctx: &WebGlRenderingContext,
+    location: [i32; 3],
+    scale: [u32; 3],
+    color: [f32; 3],
     vert: &str,
     frag: &str,
     vertices: Vec<f32>,
     indices: Vec<u16>,
   ) -> Result<Self, String>{
-    let vert_shader = compile_shader(
-      ctx,
-      WebGlRenderingContext::VERTEX_SHADER,
-      vert
-    )?;
-
-    let frag_shader = compile_shader(
-      ctx,
-      WebGlRenderingContext::FRAGMENT_SHADER,
-      frag
-    )?;
-
-    let p = link_program(ctx, &vert_shader, &frag_shader)?;
 
     Ok(Self {
-      u_color: ctx.get_uniform_location(&p, "uColor").unwrap(),
-      u_opacity: ctx.get_uniform_location(&p, "uOpacity").unwrap(),
-      u_transform: ctx.get_uniform_location(&p, "uTransform").unwrap(),
-      program: p,
       vertices: vertices,
       indices: indices,
+      color: color,
+      location: location,
+      scale: scale,
     })
   }
 }
 
-pub fn square(ctx: &WebGlRenderingContext) -> Model {
+/// create a rectangle with a size given in pixels
+pub fn rect(
+  ctx: &WebGlRenderingContext,
+  x: i32,
+  y: i32,
+  w: u32,
+  h: u32,
+  color: [f32; 3]
+) -> Model {
   let model = Model::new(ctx,
+                         [x, y, 0],
+                         [w, h, 0],
+                         color,
                          vertex::SIMPLE,
                          fragment::SIMPLE,
                          vec![
-                           -0.5, 0.5, 0.0,
-                           0.5, 0.5, 0.0,
-                           0.5, -0.5, 0.0,
-                           -0.5, -0.5, 0.0,
+                           -1., 1., 0.0,
+                           1., 1., 0.0,
+                           1., -1., 0.0,
+                           -1., -1., 0.0,
                          ],
                          vec![
                            0, 1, 3,
