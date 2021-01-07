@@ -1,69 +1,60 @@
-use web_sys::*;
-use crate::webutils::*;
-use crate::shaders::*;
-
 pub struct Model {
   // TODO: Should these just be slices?
   pub vertices: Vec<f32>,
   pub indices: Vec<u16>,
-  pub color: [f32; 3],
-  pub location: [i32; 3],
-  pub scale: [u32; 3],
-
-  // TODO: Should the program be its own type?
+  pub transform: [f32; 16],
 }
 
 impl Model {
   pub fn new(
-    ctx: &WebGlRenderingContext,
-    location: [i32; 3],
-    scale: [u32; 3],
-    color: [f32; 3],
-    vert: &str,
-    frag: &str,
     vertices: Vec<f32>,
     indices: Vec<u16>,
-  ) -> Result<Self, String>{
-
-    Ok(Self {
+    transform: [f32; 16],
+  ) -> Self {
+    Self {
       vertices: vertices,
       indices: indices,
-      color: color,
-      location: location,
-      scale: scale,
-    })
+      transform: transform,
+    }
   }
+
 }
 
-/// create a rectangle with a size given in pixels
-pub fn rect(
-  ctx: &WebGlRenderingContext,
-  x: i32,
-  y: i32,
-  w: u32,
-  h: u32,
-  color: [f32; 3]
-) -> Model {
-  let model = Model::new(ctx,
-                         [x, y, 0],
-                         [w, h, 0],
-                         color,
-                         vertex::SIMPLE,
-                         fragment::SIMPLE,
-                         vec![
-                           -1., 1., 0.0,
-                           1., 1., 0.0,
-                           1., -1., 0.0,
-                           -1., -1., 0.0,
-                         ],
-                         vec![
-                           0, 1, 3,
-                           3, 1, 2,
-                         ],
-  );
+pub fn rect(_x: i32, _y: i32, _w: u32, _h:u32) -> Model { 
+  // TODO: add engine switch for if this should be used
+  // with the center
+  // let vertices: Vec<f32> = vec![
+  //   -1.,  1.,  0.,
+  //    1.,  1.,  0.,
+  //    1., -1., 0.,
+  //   -1., -1., 0.,
+  // ];
 
-  match model {
-    Ok(m) => m,
-    Err(s) => ferr(&s),
-  }
+  // with the top left corner
+  let vertices: Vec<f32> = vec![
+    0.,  0.,  0.,
+    2.,  0.,  0.,
+    2., -2., 0.,
+    0., -2., 0.,
+  ];
+
+  let indices: Vec<u16> = vec![
+    0, 1, 3,
+    1, 3, 2
+  ];
+
+  let x = _x as f32;
+  let y = _y as f32;
+
+  let sx = _w as f32;
+  let sy = _h as f32;
+
+  let t: [f32; 16] = [
+    sx, 0., 0., 0.,
+    0., sy, 0., 0.,
+    0., 0., 1., 0.,
+    x,  y,  1.,  1.,
+  ];
+
+  Model::new(vertices, indices, t)
 }

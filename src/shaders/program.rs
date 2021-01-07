@@ -1,6 +1,7 @@
 use web_sys::*;
 use crate::shaders::funcs::*;
 
+// holds the shader program for the renderer
 pub struct Program {
   pub program: WebGlProgram,
   pub u_color: WebGlUniformLocation,
@@ -27,7 +28,6 @@ impl Program {
     ).unwrap();
 
     let p = link_program(&ctx, &vert_shader, &frag_shader).unwrap();
-
 
     Ok(Self {
       u_color: ctx.get_uniform_location(&p, "uColor").unwrap(),
