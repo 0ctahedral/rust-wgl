@@ -6,6 +6,7 @@ use js_sys::WebAssembly;
 use crate::webutils::*;
 use crate::shaders::program::*;
 use crate::model::*;
+use crate::matrix;
 
 // WebGl implementation of renderer
 pub struct Renderer {
@@ -105,9 +106,14 @@ impl Renderer {
 
   // draw a model with its given BufferWrap and transform
   pub fn draw_buffers(&self, bw: BufferWrap, m: &Model) {
+    // use pixels instead of clip space
+    self.ctx.viewport(0, 0, self.width as i32, self.height as i32);
+    
+    // use the shader
     self.ctx.use_program(Some(&self.program.program));
     // add uniforms
-    // bright green color
+
+    // color
     self.ctx.uniform4f(
       Some(&self.program.u_color),
       self.fill_color[0],
@@ -116,23 +122,28 @@ impl Renderer {
       1.,
     );
 
-    // full opacity
+    // opacity
     self.ctx.uniform1f(Some(&self.program.u_opacity), self.fill_color[3]);
 
-    let mut transform = m.transform;
+    let transform = matrix::mult(
+      matrix::projection(self.width as f32, self.height as f32, 500.),
+      m.transform
+    );
 
-    // scale the values in the transform for clip space
+    // let mut transform = m.transform;
 
-    // start with position
-    transform[12] = 2. * transform[12] / (self.width as f32) - 1.;
-    // make the top 0 on y axis
-    transform[13] = -2. * transform[13] / (self.height as f32) + 1.;
-    transform[14] = 2. * transform[14] / (self.height as f32) - 1.;
+    // // scale the values in the transform for clip space
 
-    // scale stuff too
-    transform[0] = transform[0] / (self.width as f32);
-    transform[5] = transform[5] / (self.height as f32);
-    transform[10] = transform[10] / (self.height as f32);
+    // // start with position
+    // transform[12] = 2. * transform[12] / (self.width as f32) - 1.;
+    // // make the top 0 on y axis
+    // transform[13] = -2. * transform[13] / (self.height as f32) + 1.;
+    // transform[14] = 2. * transform[14] / (self.height as f32) - 1.;
+
+    // // scale stuff too
+    // transform[0] = transform[0] / (self.width as f32);
+    // transform[5] = transform[5] / (self.height as f32);
+    // transform[10] = transform[10] / (self.height as f32);
 
     self.ctx.uniform_matrix4fv_with_f32_array(
       Some(&self.program.u_transform),

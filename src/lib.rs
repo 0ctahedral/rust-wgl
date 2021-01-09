@@ -13,6 +13,7 @@ pub mod model;
 pub mod engine;
 pub mod render;
 pub mod shaders;
+pub mod matrix;
 
 // helper function for requesting animation frames
 pub fn request_animation_frame(f: &Closure<dyn FnMut()>) {
@@ -35,7 +36,7 @@ pub fn main() -> Result<(), JsValue> {
   // draw two squares in magenta and green as a example
   e.clear(0x000000);
   e.change_color(0xff00ff);
-  e.add_model(model::rect(10, 10, 100, 100));
+  e.add_model(model::rect(0, 0, 100, 100));
   e.change_color(0x00ff00);
   e.add_model(model::rect(20, 20, 100, 100));
 
