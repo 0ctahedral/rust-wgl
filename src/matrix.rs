@@ -1,3 +1,4 @@
+use crate::webutils::*;
 // transformation matrix
 pub fn tranlate(tx: f32, ty: f32, tz: f32) -> [f32; 16] {
   [
@@ -48,12 +49,17 @@ pub fn rot_z(rad: f32) -> [f32; 16] {
 }
 
 // camera projection, flips y axis so zero is at top
-pub fn projection(w: f32, h: f32, d: f32) -> [f32; 16] {
+pub fn ortho(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) -> [f32; 16] {
   [
-    2. / w, 0., 0., 0.,
-    0., -2. / h, 0., 0.,
-    0., 0., 2. / d, 0.,
-    -1., 1., 0., 1.,
+    2. / (r - l), 0., 0., 0.,
+    0., 2. / (t - b), 0., 0.,
+    0., 0., 2. / (n - f), 0.,
+    
+    (l + r) / (l - r),
+    (b + t) / (b - t),
+    (n + f) / (n - f),
+    1.,
+
   ]
 }
 

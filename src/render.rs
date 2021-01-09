@@ -13,8 +13,8 @@ pub struct Renderer {
   ctx: GL,
   // shader program we are using for everything
   program: Program,
-  width: u32,
-  height: u32,
+  width: f32,
+  height: f32,
   fill_color: [f32; 4],
 }
 
@@ -30,14 +30,15 @@ pub struct BufferWrap {
 impl Renderer {
   pub fn new(ctx: GL) -> Self {
     // setup:
-    // enable alpha blending, set clear color and depth, set size
     ctx.enable(GL::BLEND);
+    ctx.enable(GL::CULL_FACE);
+    ctx.enable(GL::DEPTH_TEST);
     ctx.blend_func(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
     ctx.clear_color(0.0, 0.0, 0.0, 1.0);
     ctx.clear_depth(1.0);
 
-    let w = canvas().width();
-    let h = canvas().height();
+    let w = canvas().width() as f32;
+    let h = canvas().height() as f32;
     ctx.viewport(0, 0, w as i32, h as i32);
 
     // create the shader
@@ -124,7 +125,10 @@ impl Renderer {
 
 
     let matrix = matrix::mult(
-      matrix::projection(self.width as f32, self.height as f32, 500.),
+      matrix::ortho(
+        0., self.width,
+        self.height, 0.,
+        500., -500.),
       m.transform
     );
 

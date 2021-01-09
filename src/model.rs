@@ -42,7 +42,7 @@ pub fn rect(_x: i32, _y: i32, _w: u32, _h:u32) -> Model {
   ];
 
   let indices: Vec<u16> = vec![
-    0, 1, 3,
+    0, 3, 1,
     1, 3, 2
   ];
 
@@ -53,8 +53,8 @@ pub fn rect(_x: i32, _y: i32, _w: u32, _h:u32) -> Model {
   let sy = _h as f32;
 
   let t2 = matrix::mult(
-    matrix::tranlate(x, y, 1.),
-    matrix::scale(sx, sy, 0.)
+    matrix::tranlate(x, y, 0.),
+    matrix::scale(sx, sy, 1.)
   );
 
 
