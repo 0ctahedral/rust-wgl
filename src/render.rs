@@ -119,36 +119,19 @@ impl Renderer {
       self.fill_color[0],
       self.fill_color[1],
       self.fill_color[2],
-      1.,
+      self.fill_color[3],
     );
 
-    // opacity
-    self.ctx.uniform1f(Some(&self.program.u_opacity), self.fill_color[3]);
 
-    let transform = matrix::mult(
+    let matrix = matrix::mult(
       matrix::projection(self.width as f32, self.height as f32, 500.),
       m.transform
     );
 
-    // let mut transform = m.transform;
-
-    // // scale the values in the transform for clip space
-
-    // // start with position
-    // transform[12] = 2. * transform[12] / (self.width as f32) - 1.;
-    // // make the top 0 on y axis
-    // transform[13] = -2. * transform[13] / (self.height as f32) + 1.;
-    // transform[14] = 2. * transform[14] / (self.height as f32) - 1.;
-
-    // // scale stuff too
-    // transform[0] = transform[0] / (self.width as f32);
-    // transform[5] = transform[5] / (self.height as f32);
-    // transform[10] = transform[10] / (self.height as f32);
-
     self.ctx.uniform_matrix4fv_with_f32_array(
-      Some(&self.program.u_transform),
+      Some(&self.program.u_matrix),
       false,
-      &transform,
+      &matrix,
     );
 
 

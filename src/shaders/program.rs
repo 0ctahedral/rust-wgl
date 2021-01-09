@@ -5,8 +5,7 @@ use crate::shaders::funcs::*;
 pub struct Program {
   pub program: WebGlProgram,
   pub u_color: WebGlUniformLocation,
-  pub u_opacity: WebGlUniformLocation,
-  pub u_transform: WebGlUniformLocation,
+  pub u_matrix: WebGlUniformLocation,
 }
 
 impl Program {
@@ -30,9 +29,8 @@ impl Program {
     let p = link_program(&ctx, &vert_shader, &frag_shader).unwrap();
 
     Ok(Self {
-      u_color: ctx.get_uniform_location(&p, "uColor").unwrap(),
-      u_opacity: ctx.get_uniform_location(&p, "uOpacity").unwrap(),
-      u_transform: ctx.get_uniform_location(&p, "uTransform").unwrap(),
+      u_color: ctx.get_uniform_location(&p, "u_color").unwrap(),
+      u_matrix: ctx.get_uniform_location(&p, "u_matrix").unwrap(),
       program: p,
     })
   }
